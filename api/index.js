@@ -1,5 +1,10 @@
 // 引入mysql数据库配置 
 var conn = require('../db/db');
+// 引入md5加密方式
+var md5 = require('md5');
+
+// 引入时间
+var moment = require('moment');
 
 // 引入nodemailer 
 var nodemailer = require('nodemailer');
@@ -10,26 +15,40 @@ var transporter = nodemailer.createTransport({
     surce:true,
     auth:{
         user:'455947455@qq.com',
-        pass:'*******'
+        // 加密处理
+        pass:'********'
     }
 })
-
 // 用户登陆
 var login = async (req, res) =>{
-    // res.send('login')
-    // console.log(req.session.email)
-    // console.log(req.session.autoCode)
-    res.json({
-        email:req.session.email,
-        autoCode:req.session.autoCode
-    })
-    
-    
-    // res.json(req.session)
+    //登陆接口。暂时不测试 
 }
+
 // 用户注册接口  
 var register = async (req, res) =>{
-    //
+    var code = req.body.autoCode;
+    //首先接收用户传递过来的数据 
+    // console.log(req.body)
+    var users = {} // 用来装用户数据
+    users.username = req.body.username;
+    users.email = req.body.email;
+    users.password = md5(req.body.password);
+    // users.date = moment().format('L');
+
+    conn.query('select * from users', (err, result) =>{
+        if(err) return console.log(err)
+        // console.log(result)
+    })
+    if (users.email === req.session.email && code === req.session.autoCode){
+        // 
+        res.send('数据一致，可以注册')
+        var sqr = 'insert into users set?';
+        conn.query(sqr,users, (err,result) =>{
+            if (err) return console.log(err)
+            // res.send('ok')
+            console.log(result)
+        })
+    }
 }
 
 // 用户邮箱验证接口 
