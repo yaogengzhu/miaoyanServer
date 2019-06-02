@@ -2,30 +2,55 @@
 var conn = require('../db/db');
 // 引入md5加密方式
 var md5 = require('md5');
-
 // 引入时间
 var moment = require('moment');
-
 // 引入nodemailer 
 var nodemailer = require('nodemailer');
 // 配置邮箱验证信息 
 var transporter = nodemailer.createTransport({
-    host:'smtp.qq.com',
-    server:'qq',
-    surce:true,
-    auth:{
-        user:'455947455@qq.com',
+    host: 'smtp.qq.com',
+    server: 'qq',
+    surce: true,
+    auth: {
+        user: '455947455@qq.com',
         // 加密处理
-        pass:'********'
+        pass: '********'
     }
 })
 // 用户登陆
-var login = async (req, res) =>{
+var login = async (req, res) => {
+    // console.log(req.body)
+    const { username, password } = req.body;
     //登陆接口。暂时不测试 
+    var str = 'SELECT * from users WHERE username = ?'
+    conn.query(str, username, (err, result) => {
+        if (err) throw err;
+        // 判断数据库是否存在数据,不存在，则给出用户密码不存在
+        if (!result[0]) {
+            return res.json({
+                message: '用户名不存在',
+                status: 400
+            })
+        }
+        // 如果数据存在，则需要进行判断
+        console.log(md5(password))
+        console.log(md5(result[0].password))
+        if (username === result[0].username && md5(password) === md5(result[0].password)) {
+            return res.json({
+                message: "登陆成功",
+                result: { username: result[0].username, email: result[0].email },
+                status: 200
+            })
+        }
+        res.json({
+            message: '用户名或密码错误',
+            status: 201
+        })
+    })
 }
 
 // 用户注册接口  
-var register = async (req, res) =>{
+var register = async (req, res) => {
     var code = req.body.autoCode;
     //首先接收用户传递过来的数据 
     // console.log(req.body)
@@ -33,47 +58,40 @@ var register = async (req, res) =>{
     users.username = req.body.username;
     users.email = req.body.email;
     users.password = md5(req.body.password);
-    // users.date = moment().format('L');
-
-    conn.query('select * from users', (err, result) =>{
-        if(err) return console.log(err)
-        // console.log(result)
-    })
-    if (users.email === req.session.email && code === req.session.autoCode){
+    users.date = moment().format('L');
+    res.send('register 登陆接口')
+    if (users.email === req.session.email && code === req.session.autoCode) {
         // 
         res.send('数据一致，可以注册')
         var sqr = 'insert into users set?';
-        conn.query(sqr,users, (err,result) =>{
+        conn.query(sqr, users, (err, result) => {
             if (err) return console.log(err)
-            // res.send('ok')
-            console.log(result)
+            res.send('register 登陆接口')
         })
     }
 }
 
 // 用户邮箱验证接口 
-var verify = async (req, res) =>{
+var verify = async (req, res) => {
     // 首先需要拿到用户注册邮箱 
     var email = req.body.email;
     // 验证码  
-    var autoCode = String(Math.random()).substr(2,4);
-
+    var autoCode = String(Math.random()).substr(2, 4);
     // // 数据持久化，对数据存到season中 
     req.session.email = email;
     req.session.autoCode = autoCode;
-
     // 配置用户要发送的内容 
     var mailOption = {
         // 设置发件人信息 
-        from:'"test"<455947455@qq.com>',
+        from: '"test"<455947455@qq.com>',
         // 设置收件人信息
-        to:email,
-        subject:'注册验证信息',
+        to: email,
+        subject: '注册验证信息',
         // 随机验证码
-        text:autoCode
+        text: autoCode
     };
     // 发送邮件，并有回调函数 
-    transporter.sendMail(mailOption, (err,info) =>{
+    transporter.sendMail(mailOption, (err, info) => {
         if (err) return res.send('发送失败');
         res.send('发送成功！')
     })

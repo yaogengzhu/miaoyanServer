@@ -8,7 +8,7 @@ router.get('/', function (req, res, next) {
 });
 
 // 这里创建路由
-router.get('/login', api.login);
+router.post('/login', api.login);
 router.post('/register', api.register);
 router.post('/verify', api.verify);
 
