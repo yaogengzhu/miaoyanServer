@@ -14,62 +14,9 @@ var transporter = nodemailer.createTransport({
     auth: {
         user: '455947455@qq.com',
         // 加密处理
-        pass: '********'
+        pass: 'iingpluvojhpcafd'
     }
 })
-// 用户登陆
-var login = async (req, res) => {
-    // console.log(req.body)
-    const { username, password } = req.body;
-    //登陆接口。暂时不测试 
-    var str = 'SELECT * from users WHERE username = ?'
-    conn.query(str, username, (err, result) => {
-        if (err) throw err;
-        // 判断数据库是否存在数据,不存在，则给出用户密码不存在
-        if (!result[0]) {
-            return res.json({
-                message: '用户名不存在',
-                status: 400
-            })
-        }
-        // 如果数据存在，则需要进行判断
-        console.log(md5(password))
-        console.log(md5(result[0].password))
-        if (username === result[0].username && md5(password) === md5(result[0].password)) {
-            return res.json({
-                message: "登陆成功",
-                result: { username: result[0].username, email: result[0].email },
-                status: 200
-            })
-        }
-        res.json({
-            message: '用户名或密码错误',
-            status: 201
-        })
-    })
-}
-
-// 用户注册接口  
-var register = async (req, res) => {
-    var code = req.body.autoCode;
-    //首先接收用户传递过来的数据 
-    // console.log(req.body)
-    var users = {} // 用来装用户数据
-    users.username = req.body.username;
-    users.email = req.body.email;
-    users.password = md5(req.body.password);
-    users.date = moment().format('L');
-    res.send('register 登陆接口')
-    if (users.email === req.session.email && code === req.session.autoCode) {
-        // 
-        res.send('数据一致，可以注册')
-        var sqr = 'insert into users set?';
-        conn.query(sqr, users, (err, result) => {
-            if (err) return console.log(err)
-            res.send('register 登陆接口')
-        })
-    }
-}
 
 // 用户邮箱验证接口 
 var verify = async (req, res) => {
@@ -98,8 +45,82 @@ var verify = async (req, res) => {
 
 }
 
+// 用户注册接口  
+var register = async (req, res) => {
+    var code = req.body.autoCode;
+    //首先接收用户传递过来的数据 
+    // console.log(req.body)
+    var userInfo = {} // 用来装用户数据
+    userInfo.username = req.body.username;
+    userInfo.email = req.body.email;
+    userInfo.password = md5(req.body.password);
+    userInfo.date = moment().format('YYYY-MM-DD hh:mm:ss');
+    if (userInfo.email === req.session.email && code === req.session.autoCode) {
+        // 增加数据
+        var sqr = 'insert into users set?';
+        conn.query(sqr, userInfo, (err, result) => {
+            if (err) return console.log(err)
+            if (result.affectedRows === 0) {
+                return res.json({
+                    message:'注册失败',
+                    status:400
+                })
+            }
+            res.json({
+                message: '注册成功',
+                status: 200
+            })
+        })
+    }
+}
+
+// 用户登陆
+var login = async (req, res) => {
+    // console.log(req.body)
+    const { username, password } = req.body;
+    //数据库的查找数据（条件查找）
+    var str = 'SELECT * from users WHERE username = ?'
+    conn.query(str, username, (err, result) => {
+        if (err) throw err;
+        // 判断数据库是否存在数据,不存在，则给出用户密码不存在
+        if (!result[0]) {
+            return res.json({
+                message: '用户名不存在',
+                status: 400
+            })
+        }
+        // 如果数据存在，则需要进行判断
+        if (username === result[0].username && md5(password) ===result[0].password) {
+            return res.json({
+                message: "登陆成功",
+                result: { username: result[0].username, email: result[0].email },
+                status: 200
+            })
+        }
+        res.json({
+            message: '用户名或密码错误',
+            status: 201
+        })
+    })
+}
+
+// 修改密码，首先得校验邮箱和用户名,邮箱校验成功之后，发送邮件，修改密码 
+// var checkEmail = async (req, res) =>{
+//     console.log(req.body)
+//     const {username , email} = req.body;
+//     // 数据库获取
+//     let str = 'SELECT * from users WHERE email = ?';
+//     conn.query(str, email , (err, result) =>{
+//         // if (err) throw err ;
+//         console.log(result);
+//     })
+// }
+
+
+
 module.exports = {
     login,
     register,
-    verify
+    verify,
+    checkEmail
 }
