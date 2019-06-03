@@ -13,8 +13,8 @@ var transporter = nodemailer.createTransport({
     surce: true,
     auth: {
         user: '455947455@qq.com',
-        // 加密处理
-        pass: 'iingpluvojhpcafd'
+        // 加密处理,改成您自己的邮箱登陆码，邮箱后台可以随机生成
+        pass: '***********'
     }
 })
 
